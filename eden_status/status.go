@@ -45,7 +45,7 @@ func (this *EdenStatus) Code() int32 {
 }
 
 // adapt to new eden_status
-func (this *EdenStatus) Msg(language string) string {
+func (this *EdenStatus) Msg() string {
 	return this.StatusMsg
 }
 
