@@ -17,3 +17,8 @@ func NewIdGenerator() *IdGenerator {
 
 	return gen
 }
+
+func (g *IdGenerator) Get() (int64, error) {
+	id, err := g.idgen.NextId()
+	return id, err
+}

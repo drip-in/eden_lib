@@ -1,4 +1,4 @@
-package utils
+package id_gen
 
 import (
 	"fmt"

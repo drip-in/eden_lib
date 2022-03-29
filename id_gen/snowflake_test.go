@@ -1,14 +1,15 @@
-package utils
+package id_gen
 
 import (
 	"fmt"
+	"github.com/drip-in/eden_lib/utils"
 	"os"
 	"sync"
 	"testing"
 )
 
 func TestNewIDGenerator(t *testing.T) {
-	testStart()
+	utils.TestStart()
 
 	b := "\t\t\t"
 	b2 := "\t\t\t\t\t"
@@ -65,12 +66,12 @@ func TestNewIDGenerator(t *testing.T) {
 		fmt.Printf("id=%d\ttimestamp=%d\tworkerId=%d\tsequence=%d\terr=%v\n",
 			id, ts, workerId, seq, err)
 	}
-	testEnd()
+	utils.TestEnd()
 }
 
 //多线程测试
 func TestSnowFlakeIdGenerator_MultiThread(t *testing.T) {
-	testStart()
+	utils.TestStart()
 
 	ff := "./snowflake.txt"
 	//准备写入的文件
@@ -109,5 +110,5 @@ func TestSnowFlakeIdGenerator_MultiThread(t *testing.T) {
 	wg.Wait()
 	fp.Close()
 
-	testEnd()
+	utils.TestEnd()
 }

@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+func TestStart() {
+	s, _ := getTestDelim()
+	fmt.Print(s)
+}
+
+func TestEnd() {
+	_, e := getTestDelim()
+	fmt.Print(e)
+}
+
 //开始测试
 func testStart() {
 	s, _ := getTestDelim()
@@ -37,4 +47,3 @@ func getTestDelim() (start, end string) {
 	end = fmt.Sprintf("%sEND   %s%s\n", strings.Repeat("=", d/2), Yellow(msg), strings.Repeat("=", d/2))
 	return
 }
-
