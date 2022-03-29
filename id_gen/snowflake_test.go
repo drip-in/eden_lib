@@ -2,14 +2,12 @@ package id_gen
 
 import (
 	"fmt"
-	"github.com/drip-in/eden_lib/utils"
 	"os"
 	"sync"
 	"testing"
 )
 
 func TestNewIDGenerator(t *testing.T) {
-	utils.TestStart()
 
 	b := "\t\t\t"
 	b2 := "\t\t\t\t\t"
@@ -45,7 +43,7 @@ func TestNewIDGenerator(t *testing.T) {
 	fmt.Printf("%s%s%s\n", d, b, d)
 
 	var ids []int64
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1500; i++ {
 		id1, err := gentor1.NextId()
 		if err != nil {
 			fmt.Println(err)
@@ -57,7 +55,7 @@ func TestNewIDGenerator(t *testing.T) {
 			return
 		}
 		ids = append(ids, id2)
-		fmt.Printf("%d%s%d\n", id1, b2, id2)
+		fmt.Printf("%d%s%d%s%d\n", i, b2, id1, b2, id2)
 	}
 
 	//解析ID
@@ -66,12 +64,10 @@ func TestNewIDGenerator(t *testing.T) {
 		fmt.Printf("id=%d\ttimestamp=%d\tworkerId=%d\tsequence=%d\terr=%v\n",
 			id, ts, workerId, seq, err)
 	}
-	utils.TestEnd()
 }
 
 //多线程测试
 func TestSnowFlakeIdGenerator_MultiThread(t *testing.T) {
-	utils.TestStart()
 
 	ff := "./snowflake.txt"
 	//准备写入的文件
@@ -110,5 +106,4 @@ func TestSnowFlakeIdGenerator_MultiThread(t *testing.T) {
 	wg.Wait()
 	fp.Close()
 
-	utils.TestEnd()
 }

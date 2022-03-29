@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// https://www.cnblogs.com/askpad/p/8361456.html
 /**
  * SnowFlake算法，生成的共64位，用uint64即可表示，各位情况说明：
  * 第1位（不提供调整）：
@@ -29,6 +30,9 @@ import (
 /**
 详见测试用例：go test -test.run TestNewIDGenerator
 */
+
+/*开始时间截 (建议用服务第一次上线的时间，到毫秒级的时间戳) */
+const START_STAMP int64 = 1640966400000
 
 //SnowFlake的结构体
 type SnowFlakeIdGenerator struct {
@@ -150,13 +154,9 @@ func (sfg *SnowFlakeIdGenerator) Init() (*SnowFlakeIdGenerator, error) {
 	return sfg, nil
 }
 
-//生成时间戳，根据bit size设置取高几位
-//即，生成的时间戳先右移几位，再左移几位，就保留了最高的指定位数
+//生成时间戳
 func (sfg *SnowFlakeIdGenerator) genTs() int64 {
-	rawTs := time.Now().UnixNano()
-	diff := 64 - sfg.timeBitSize
-	ret := (rawTs >> diff) << diff
-	return ret
+	return time.Now().UnixMilli()
 }
 
 //生成下一个时间戳，如果时间戳的位数较小，且序号用完时此处等待的时间会较长
@@ -200,7 +200,7 @@ func (sfg *SnowFlakeIdGenerator) NextId() (int64, error) {
 	sfg.lastMsTimestamp = curTs
 
 	//将处理好的各个位组装成一个int64型
-	curTs = curTs | sfg.workerIdAfterShift | sfg.curSequence
+	curTs = ((curTs - START_STAMP) << sfg.timestampLeftShift) | sfg.workerIdAfterShift | sfg.curSequence
 	return curTs, nil
 }
 

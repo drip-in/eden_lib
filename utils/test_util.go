@@ -6,16 +6,6 @@ import (
 	"strings"
 )
 
-func TestStart() {
-	s, _ := getTestDelim()
-	fmt.Print(s)
-}
-
-func TestEnd() {
-	_, e := getTestDelim()
-	fmt.Print(e)
-}
-
 //开始测试
 func testStart() {
 	s, _ := getTestDelim()

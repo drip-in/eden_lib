@@ -2,19 +2,20 @@ package utils
 
 import (
 	"fmt"
+	"github.com/drip-in/eden_lib/id_gen"
+	"golang.org/x/crypto/ssh/terminal"
 	"math"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
 	LocalHostIP         = ""
 	LocalHostIpArr      []string
 	LocalHostIpTraceId  = ""
-	SequenceIDGenerator *SnowFlakeIdGenerator
+	SequenceIDGenerator *id_gen.SnowFlakeIdGenerator
 	preTraceID          = ""
 	ScreenWidth         int
 	ScreenHeight        int
@@ -36,7 +37,7 @@ func init() {
 	}
 	//ID生成器
 	var err error
-	SequenceIDGenerator, err = NewIDGenerator().
+	SequenceIDGenerator, err = id_gen.NewIDGenerator().
 		SetTimeBitSize(40).
 		SetSequenceBitSize(22).
 		SetWorkerIdBitSize(1).
@@ -188,4 +189,3 @@ func MinInt64(args ...interface{}) (int64, error) {
 func GetTerminalSize() (width, height int, err error) {
 	return terminal.GetSize(int(os.Stdout.Fd()))
 }
-
