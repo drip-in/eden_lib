@@ -2,6 +2,7 @@ package eden_status
 
 import (
 	"errors"
+	"fmt"
 )
 
 const (
@@ -53,14 +54,17 @@ func (this *EdenStatus) Msg() string {
 	return this.StatusMsg
 }
 
-func NewErrCode(err error) StatusCode {
+func NewErrCode(err error) *EdenStatus {
 	if err == nil {
 		return EdenSuccess
 	}
 	for {
 		if err != nil {
 			if errCode, ok := err.(StatusCode); ok {
-				return errCode
+				return &EdenStatus{
+					StatusCode: errCode.Code(),
+					StatusMsg:  errCode.Msg(),
+				}
 			}
 			err = errors.Unwrap(err)
 		} else {
@@ -68,4 +72,12 @@ func NewErrCode(err error) StatusCode {
 		}
 	}
 	return EdenServiceInternal
+}
+
+// 替换替换原信息想上透传。
+func RepErrCodeMsg(base StatusCode, newMsg string, args ...interface{}) *EdenStatus {
+	return &EdenStatus{
+		StatusCode: base.Code(),
+		StatusMsg:  fmt.Sprintf(newMsg, args...),
+	}
 }
