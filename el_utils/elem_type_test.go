@@ -3,7 +3,7 @@
  * @package     es
  * @date        2018-06-25 16:03
  */
-package utils
+package el_utils
 
 import (
 	"fmt"

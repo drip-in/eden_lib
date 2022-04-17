@@ -4,8 +4,7 @@
 // 此处操作post数据时主要用了buf缓冲空间，并提供了直接操作此buffer的方法
 // 理论上，日常使用足够了，特殊需求请自行添加相应的方法及设置
 
-
-package utils
+package el_utils
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package utils
+package el_utils
 
 import (
 	"net/url"

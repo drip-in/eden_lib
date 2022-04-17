@@ -1,7 +1,7 @@
 // @author      Liu Yongshuai<liuyongshuai@hotmail.com>
 // @date        2018-11-29 16:16
 
-package utils
+package el_utils
 
 import (
 	"fmt"

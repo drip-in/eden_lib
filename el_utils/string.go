@@ -1,4 +1,4 @@
-package utils
+package el_utils
 
 import (
 	"bytes"
@@ -342,4 +342,3 @@ func StrShuffle(str string) string {
 	}
 	return string(rs)
 }
-

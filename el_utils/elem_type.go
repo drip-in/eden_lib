@@ -1,7 +1,7 @@
 /*
  * 各种类型的数据相互转来转去
  */
-package utils
+package el_utils
 
 import (
 	"encoding/json"
