@@ -1,5 +1,9 @@
 package eden_status
 
+import (
+	"errors"
+)
+
 const (
 	COMMON  int32 = (1 << 10) * 0 // 0
 	SERVICE int32 = (1 << 10) * 1 // 1025
@@ -8,7 +12,7 @@ const (
 // api use
 type StatusCode interface {
 	Code() int32
-	Msg(language string) string
+	Msg() string
 }
 
 type EdenStatus struct {
@@ -49,3 +53,19 @@ func (this *EdenStatus) Msg() string {
 	return this.StatusMsg
 }
 
+func NewErrCode(err error) StatusCode {
+	if err == nil {
+		return EdenSuccess
+	}
+	for {
+		if err != nil {
+			if errCode, ok := err.(StatusCode); ok {
+				return errCode
+			}
+			err = errors.Unwrap(err)
+		} else {
+			break
+		}
+	}
+	return EdenServiceInternal
+}
