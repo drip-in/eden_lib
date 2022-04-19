@@ -156,7 +156,7 @@ func (sfg *SnowFlakeIdGenerator) Init() (*SnowFlakeIdGenerator, error) {
 
 //生成时间戳
 func (sfg *SnowFlakeIdGenerator) genTs() int64 {
-	return time.Now().UnixMilli()
+	return time.Now().UnixNano() / 1e6
 }
 
 //生成下一个时间戳，如果时间戳的位数较小，且序号用完时此处等待的时间会较长
