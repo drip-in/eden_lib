@@ -26,15 +26,26 @@ import (
 	"time"
 )
 
+type HttpConfig struct {
+	Url     string
+	Timeout time.Duration
+
+	Retry int32
+}
+
 //构造一个请求结构体
-func NewHttpClient(httpUrl string, ctx context.Context) *HttpClient {
-	ret := NewEmptyHttpClient()
-	ret.SetCtx(ctx).SetUrl(httpUrl)
+func NewHttpClient(config HttpConfig, ctx context.Context) *HttpClient {
+	ret := NewEmptyHttpClient(config)
+	ret.SetCtx(ctx).SetUrl(config.Url)
 	return ret
 }
 
 //构造空的
-func NewEmptyHttpClient() *HttpClient {
+func NewEmptyHttpClient(config HttpConfig) *HttpClient {
+	timeout := time.Duration(int64(3) * int64(time.Second))
+	if config.Timeout > 0 {
+		timeout = config.Timeout
+	}
 	ret := &HttpClient{
 		hClient: &http.Client{
 			Transport: &http.Transport{
@@ -43,12 +54,12 @@ func NewEmptyHttpClient() *HttpClient {
 				TLSClientConfig:    &tls.Config{InsecureSkipVerify: true}, //默认请求https时忽略证书校验
 			},
 		},
-		timeout:     time.Duration(int64(3) * int64(time.Second)), //默认3秒
-		retry:       3,                                            //默认重试三次
-		headers:     make(http.Header),                            //头信息，所有的请求都要
-		buf:         new(bytes.Buffer),                            //最终body缓冲区，一般用于post/put
-		vals:        make(url.Values),                             //用于PostForm的KV列表
-		uploadFiles: []HttpUploadFile{},                           //上传文件的列表
+		timeout:     timeout,            //默认3秒
+		retry:       3,                  //默认重试三次
+		headers:     make(http.Header),  //头信息，所有的请求都要
+		buf:         new(bytes.Buffer),  //最终body缓冲区，一般用于post/put
+		vals:        make(url.Values),   //用于PostForm的KV列表
+		uploadFiles: []HttpUploadFile{}, //上传文件的列表
 		traceId:     FakeTraceId(),
 	}
 	return ret
