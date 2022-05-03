@@ -111,7 +111,7 @@ var (
 	Any         = zap.Any
 
 	Info   = std.Info
-	Infof   = std.Info
+	Infof  = std.Info
 	Warn   = std.Warn
 	Error  = std.Error
 	DPanic = std.DPanic
@@ -171,4 +171,3 @@ func Sync() error {
 	}
 	return nil
 }
-

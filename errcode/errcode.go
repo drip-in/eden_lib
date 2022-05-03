@@ -5,9 +5,30 @@ import (
 	"fmt"
 )
 
+// api use
+type StatusCode interface {
+	Code() int32
+	Msg(language string) string
+	StarlingKey() string
+}
+
+type Stable interface {
+	Stability() int32
+}
+
+// rpc use
+type ErrCode interface {
+	Code() int32
+	Error() string
+}
+
 const (
-	COMMON  int32 = (1 << 10) * 0 // 0
-	SERVICE int32 = (1 << 10) * 1 // 1025
+	ErrCodeStable   = 0
+	ErrCodeUnStable = 1
+)
+
+const (
+	COMMON int32 = 0
 )
 
 var (
@@ -18,17 +39,7 @@ var (
 	ErrInvalidParam = &InnerErrCode{code: COMMON + 2, msg: "参数不合法"}
 	// stable:stable, code:6001005, starlingKey:, msg:操作频繁，请稍后再试。
 	ErrLocked = &InnerErrCode{code: COMMON + 3, msg: "操作频繁，请稍后再试"}
-
-	//SERVICE
-	ERR_AUTH_CHECK_TOKEN_FAIL    = &InnerErrCode{code: SERVICE + 1, msg: "认证校验失败"}
-	ERR_AUTH_CHECK_TOKEN_TIMEOUT = &InnerErrCode{code: SERVICE + 2, msg: "认证已过期"}
 )
-
-// rpc use
-type ErrCode interface {
-	Code() int32
-	Error() string
-}
 
 type InnerErrCode struct {
 	code int32
@@ -97,4 +108,3 @@ func IsLegacyErr(err error) bool {
 	}
 	return false
 }
-
