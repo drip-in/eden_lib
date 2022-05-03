@@ -28,7 +28,7 @@ func LocalIP() (ips []string) {
 //获取当前的外网IP
 func GetRemoteIP() string {
 	url := "http://httpbin.org/ip"
-	httpClient := NewHttpClient(url, context.Background())
+	httpClient := NewHttpClient(context.Background(), &HttpConfig{Url: url})
 	rsp, err := httpClient.Get()
 	if err != nil {
 		return ""
