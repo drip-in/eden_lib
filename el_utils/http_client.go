@@ -29,19 +29,18 @@ import (
 type HttpConfig struct {
 	Url     string
 	Timeout time.Duration
-
-	Retry int32
+	Retry   int32
 }
 
 //构造一个请求结构体
-func NewHttpClient(config HttpConfig, ctx context.Context) *HttpClient {
+func NewHttpClient(ctx context.Context, config *HttpConfig) *HttpClient {
 	ret := NewEmptyHttpClient(config)
 	ret.SetCtx(ctx).SetUrl(config.Url)
 	return ret
 }
 
 //构造空的
-func NewEmptyHttpClient(config HttpConfig) *HttpClient {
+func NewEmptyHttpClient(config *HttpConfig) *HttpClient {
 	timeout := time.Duration(int64(3) * int64(time.Second))
 	if config.Timeout > 0 {
 		timeout = config.Timeout

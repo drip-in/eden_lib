@@ -20,7 +20,7 @@ func TestHttpClient_Get(t *testing.T) {
 	testStart()
 
 	url := "http://10.96.114.84/add1.php?a=1&b=3"
-	client := NewHttpClient(url, context.Background())
+	client := NewHttpClient(context.Background(), &HttpConfig{Url: url})
 	client.AddCookie("c1", "v1")
 	client.SetReferer("http://microsoft.com")
 	client.AddHeader("myHeaderKey", "myHeaderValue")
@@ -41,7 +41,7 @@ func TestHttpClient_Post(t *testing.T) {
 	testStart()
 
 	url := "http://10.96.114.84/add1.php"
-	client := NewHttpClient(url, context.Background())
+	client := NewHttpClient(context.Background(), &HttpConfig{Url: url})
 	client.SetField("singleValue", "value")
 	client.AddField("multiValue", "v1")
 	client.AddField("multiValue", "v2")
