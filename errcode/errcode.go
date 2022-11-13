@@ -58,23 +58,6 @@ func (i *InnerErrCode) Error() string {
 	return i.msg
 }
 
-//func NewErrCode(err error) ErrCode {
-//	if err == nil {
-//		return Success
-//	}
-//	for {
-//		if err != nil {
-//			if errCode, ok := err.(ErrCode); ok {
-//				return errCode
-//			}
-//			err = errors.Unwrap(err)
-//		} else {
-//			break
-//		}
-//	}
-//	return ErrServiceInternal
-//}
-
 // 扩展错误msg向上传递。如"参数不合法： xxx"。 xxx即为扩展信息
 func ExtErrCodeMsg(base ErrCode, extMsg string, args ...interface{}) error {
 	return &InnerErrCode{

@@ -1,4 +1,4 @@
-package locker
+package el_tool
 
 import (
 	"context"
@@ -37,6 +37,20 @@ func (p *Locker) TryLockWithDuration(ctx context.Context, key string, duration t
 	return p.tryLock(ctx, key, duration)
 }
 
+func (p *Locker) TryLockWithValAndDuration(ctx context.Context, key string, value interface{}, duration time.Duration) bool {
+	if key == "" {
+		panic("empty key")
+	}
+
+	cacheKey := p.genCacheKey(key)
+	success, err := p.redisClient.WithContext(ctx).SetNX(cacheKey, value, duration).Result()
+	if err != nil {
+		logs.Error("redis client setnx", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
+		return false
+	}
+	return success
+}
+
 func (p *Locker) tryLock(ctx context.Context, key string, duration time.Duration) (unLockFunc func()) {
 	if key == "" {
 		panic("empty key")
@@ -45,29 +59,32 @@ func (p *Locker) tryLock(ctx context.Context, key string, duration time.Duration
 	cacheKey := p.genCacheKey(key)
 	cacheValue := time.Now().UnixNano()
 
-	success, err := p.redisClient.SetNX(ctx, cacheKey, cacheValue, duration).Result()
+	success, err := p.redisClient.WithContext(ctx).SetNX(cacheKey, cacheValue, duration).Result()
 	if err != nil {
 		logs.Error("redis client setnx", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
 		return nil
 	}
 	if success {
 		return func() {
-			p.unLock(ctx, cacheKey, cacheValue)
+			p.UnLock(ctx, cacheKey, cacheValue)
 		}
 	} else {
 		return nil
 	}
 }
 
-func (p *Locker) unLock(ctx context.Context, key string, value int64) {
-	currentValue, err := p.redisClient.Get(ctx, key).Int64()
+func (p *Locker) UnLock(ctx context.Context, key string, value interface{}) error {
+	currentValue, err := p.redisClient.WithContext(ctx).Get(key).Int64()
 	if err != nil {
 		logs.Warn("redis client get", logs.String("err", err.Error()), logs.String("cacheKey", key))
+		return err
 	}
 	if currentValue == value { // 防止本锁超时后, 解锁别人的锁
-		_, err := p.redisClient.Del(ctx, key).Result()
+		_, err = p.redisClient.WithContext(ctx).Del(key).Result()
 		if err != nil {
 			logs.Error("redis client del", logs.String("err", err.Error()), logs.String("cacheKey", key))
+			return err
 		}
 	}
+	return nil
 }

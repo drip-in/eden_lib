@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"io"
@@ -27,7 +28,15 @@ func (l *Logger) Debug(msg string, fields ...Field) {
 	l.l.Debug(msg, fields...)
 }
 
+func (l *Logger) CtxDebug(ctx context.Context, msg string, fields ...Field) {
+	l.l.Debug(msg, fields...)
+}
+
 func (l *Logger) Info(msg string, fields ...Field) {
+	l.l.Info(msg, fields...)
+}
+
+func (l *Logger) CtxInfo(ctx context.Context, msg string, fields ...Field) {
 	l.l.Info(msg, fields...)
 }
 
@@ -35,16 +44,39 @@ func (l *Logger) Warn(msg string, fields ...Field) {
 	l.l.Warn(msg, fields...)
 }
 
+func (l *Logger) CtxWarn(ctx context.Context, msg string, fields ...Field) {
+	l.l.Warn(msg, fields...)
+}
+
 func (l *Logger) Error(msg string, fields ...Field) {
 	l.l.Error(msg, fields...)
 }
+
+func (l *Logger) CtxError(ctx context.Context, msg string, fields ...Field) {
+	l.l.Error(msg, fields...)
+}
+
 func (l *Logger) DPanic(msg string, fields ...Field) {
 	l.l.DPanic(msg, fields...)
 }
+
+func (l *Logger) CtxDPanic(ctx context.Context, msg string, fields ...Field) {
+	l.l.DPanic(msg, fields...)
+}
+
 func (l *Logger) Panic(msg string, fields ...Field) {
 	l.l.Panic(msg, fields...)
 }
+
+func (l *Logger) CtxPanic(ctx context.Context, msg string, fields ...Field) {
+	l.l.Panic(msg, fields...)
+}
+
 func (l *Logger) Fatal(msg string, fields ...Field) {
+	l.l.Fatal(msg, fields...)
+}
+
+func (l *Logger) CtxFatal(ctx context.Context, msg string, fields ...Field) {
 	l.l.Fatal(msg, fields...)
 }
 
@@ -118,6 +150,15 @@ var (
 	Panic  = std.Panic
 	Fatal  = std.Fatal
 	Debug  = std.Debug
+
+	CtxInfo   = std.CtxInfo
+	CtxInfof  = std.CtxInfo
+	CtxWarn   = std.CtxWarn
+	CtxError  = std.CtxError
+	CtxDPanic = std.CtxDPanic
+	CtxPanic  = std.CtxPanic
+	CtxFatal  = std.CtxFatal
+	CtxDebug  = std.CtxDebug
 )
 
 // not safe for concurrent use
