@@ -15,7 +15,7 @@ import (
 type DbType string
 
 const (
-	EdenDBName  = "eden"
+	EdenDBName = "eden"
 
 	Read  = DbType("read")
 	Write = DbType("write")
@@ -31,15 +31,15 @@ type DBClient struct {
 }
 
 func NewDBClient(dbConf *conf.Database, logLevel logger.LogLevel, customLogger *logs.Logger) (*DBClient, error) {
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Port, dbConf.Name)
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Port, dbConf.Name)
 	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN: dsn, // DSN data source name
-		DefaultStringSize: 256, // string 类型字段的默认长度
-		DisableDatetimePrecision: true, // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
-		DontSupportRenameIndex: true, // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-		DontSupportRenameColumn: true, // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
+		DSN:                       dsn,   // DSN data source name
+		DefaultStringSize:         256,   // string 类型字段的默认长度
+		DisableDatetimePrecision:  true,  // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
+		DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
+		DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
 		SkipInitializeWithVersion: false, // 根据版本自动配置
-	}), &gorm.Config{}, Logger{LogLevel: logLevel, IgnoreRecordNotFoundError: true, Logger: customLogger})
+	}), &gorm.Config{QueryFields: true}, Logger{LogLevel: logLevel, IgnoreRecordNotFoundError: true, Logger: customLogger})
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,6 @@ func (w *DBClient) Rollback(ctx context.Context) error {
 	return tx.Rollback().Error
 }
 
-
 func (w *DBClient) GetTransaction(ctx context.Context) *gorm.DB {
 	value := ctx.Value(TRANSACTION_KEY)
 	if value == nil {
@@ -114,4 +113,3 @@ func (w *DBClient) GetTransaction(ctx context.Context) *gorm.DB {
 	}
 	return tx
 }
-

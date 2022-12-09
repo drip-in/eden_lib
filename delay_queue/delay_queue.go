@@ -4,102 +4,58 @@ import (
 	"context"
 	"fmt"
 	"github.com/drip-in/eden_lib/el_utils"
+	"github.com/drip-in/eden_lib/godash/maps"
 	"github.com/drip-in/eden_lib/logs"
 	"github.com/go-redis/redis"
+	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
+)
+
+type PersistFn func(event *EventEntity) error
+
+var (
+	DelayQueueImpl *DelayQueue
 )
 
 type DelayQueue struct {
 	namespace   string
 	redisClient *redis.Client
 	once        sync.Once
+	wg          sync.WaitGroup
+	isRunning   int32
+	stop        chan struct{}
+	persistFn   PersistFn
+}
+
+func init() {
+	DelayQueueImpl = &DelayQueue{}
+}
+
+func GetDelayQueue() *DelayQueue {
+	return DelayQueueImpl
 }
 
 func NewDelayQueue(namespace string, redisClient *redis.Client) *DelayQueue {
-	initQueue()
-	return &DelayQueue{
-		namespace:   namespace,
-		redisClient: redisClient,
-	}
+	DelayQueueImpl.namespace = namespace
+	DelayQueueImpl.redisClient = redisClient
+	DelayQueueImpl.stop = make(chan struct{})
+	return DelayQueueImpl
 }
 
-func initQueue() {
-
+func (q *DelayQueue) WithPersistForUnhandledEvent(fn PersistFn) {
+	q.persistFn = fn
 }
 
-func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubscriber) {
-	list := append([]IEventSubscriber{subscriber}, others...)
-	q.once.Do(func() {
-		for _, s := range list {
-			subscriber := s
-			el_utils.GoSafe(func() {
-				ticker := time.NewTicker(time.Second)
-				for {
-					select {
-					case <-ticker.C:
-						_ = q.consumeWithSubscriber(subscriber)
-						return
-					}
-				}
-			})
-		}
-	})
-}
-
-func (q *DelayQueue) consumeWithSubscriber(subscriber IEventSubscriber) error {
-	ctx := context.Background()
-	members, err := q.redisClient.WithContext(ctx).ZRangeWithScores(q.genBucketKey(subscriber.Topic()), 0, time.Now().Unix()).Result()
-	if err != nil && err != redis.Nil {
-		return err
+// gracefully shudown
+func (q *DelayQueue) ShutDown() {
+	if !atomic.CompareAndSwapInt32(&q.isRunning, 1, 0) {
+		return
 	}
-	group := &sync.WaitGroup{}
-	lock := &sync.Mutex{}
-	errMap := make(map[string]error)
-	for _, m := range members {
-		group.Add(1)
-		eventId := m.Member.(string)
-		data, err := q.redisClient.WithContext(ctx).HGet(q.genPoolKey(subscriber.Topic()), eventId).Result()
-		if err != nil && err != redis.Nil {
-			return err
-		}
-		event := &EventEntity{
-			EventId: el_utils.String2Int64(eventId),
-			Body:    data,
-		}
-		el_utils.GoSafe(func() {
-			err = subscriber.Handle(ctx, event)
-			if err != nil {
-				lock.Lock()
-				errMap[eventId] = err
-				lock.Unlock()
-			}
-		}, group.Done)
-	}
-	group.Wait()
-
-	// 从JobPool和Bucket中删除事件
-	var fields []string
-	var doneMembers []interface{}
-	for _, m := range members {
-		eventId := m.Member.(string)
-		if _, ok := errMap[eventId]; !ok {
-			fields = append(fields, eventId)
-			doneMembers = append(doneMembers, eventId)
-		}
-	}
-	pipeline := q.redisClient.WithContext(ctx).Pipeline()
-	defer pipeline.Close()
-
-	pipeline.HDel(q.genPoolKey(subscriber.Topic()), fields...)
-	pipeline.ZRem(q.genBucketKey(subscriber.Topic()), doneMembers...)
-	_, err = pipeline.Exec()
-	if err != nil {
-		//重试一次
-		_, err = pipeline.Exec()
-	}
-	return err
+	close(q.stop)
+	q.wg.Wait()
 }
 
 func (q *DelayQueue) genBucketKey(topic string) string {
@@ -110,19 +66,150 @@ func (q *DelayQueue) genPoolKey(topic string) string {
 	return fmt.Sprintf("POOL_%v_%v", q.namespace, topic)
 }
 
-func (q *DelayQueue) PublishEvent(ctx context.Context, event EventEntity) error {
+func (q *DelayQueue) genQueueKey(topic string) string {
+	return fmt.Sprintf("QUEUE_%v_%v", q.namespace, topic)
+}
+
+func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubscriber) {
+	if !atomic.CompareAndSwapInt32(&q.isRunning, 0, 1) {
+		return
+	}
+
+	list := append([]IEventSubscriber{subscriber}, others...)
+	topicConsumerMap := make(map[string][]IEventSubscriber)
+	for _, s := range list {
+		topicConsumerMap[s.Topic()] = append(topicConsumerMap[s.Topic()], s)
+	}
+	topicList := maps.Keys(topicConsumerMap).([]string)
+	q.once.Do(func() {
+		for _, t := range topicList {
+			topic := t
+			// 定时topic扫描到期的事件
+			el_utils.GoSafe(func(ctx context.Context) {
+				for {
+					if atomic.LoadInt32(&q.isRunning) == 0 {
+						break
+					}
+					_ = q.carryEventToQueue(topic)
+				}
+			})
+
+			// 消费topic队列的事件
+			el_utils.GoSafe(func(ctx context.Context) {
+				_ = q.runConsumer(topic, topicConsumerMap[topic])
+			})
+		}
+	})
+}
+
+// 扫描zset中到期的任务，添加到对应topic的待消费队列里，并从Bucket中删除已进入待消费队列的事件;
+// 每次都取指定数量,防止消息突增
+func (q *DelayQueue) carryEventToQueue(topic string) error {
+	script := redis.NewScript(`
+	  local members = redis.call('ZRangeByScore', KEYS[1], '0', ARGV[1], 'limit', 0, 20)
+	  if(next(members) ~= nil) then
+		redis.call('ZRem', KEYS[1], 0, unpack(members, 1, #members))
+		redis.call('RPush', KEYS[2], unpack(members, 1, #members))
+	  end
+	  `)
+	ctx := context.Background()
+	delayKey := q.genBucketKey(topic)
+	readyKey := q.genQueueKey(topic)
+	res, err := script.Run(q.redisClient.WithContext(ctx), []string{delayKey, readyKey}, el_utils.ToString(time.Now().Unix())).Result()
+	if err != nil {
+		logs.CtxError(ctx, "[carryEventToQueue] script.Run", logs.String("err", err.Error()))
+		return err
+	}
+	logs.CtxWarn(ctx, "[carryEventToQueue]", logs.String("res", el_utils.ToString(res)))
+	return nil
+}
+
+func (q *DelayQueue) runConsumer(topic string, subscriberList []IEventSubscriber) error {
+	for {
+		if atomic.LoadInt32(&q.isRunning) == 0 {
+			break
+		}
+		q.wg.Add(1)
+		ctx := context.Background()
+		kvPair, err := q.redisClient.WithContext(ctx).BLPop(60*time.Second, q.genQueueKey(topic)).Result()
+		if err != nil {
+			logs.CtxWarn(ctx, "[runConsumer] BLPop", logs.String("err", err.Error()))
+			q.wg.Done()
+			continue
+		}
+		if len(kvPair) < 2 {
+			q.wg.Done()
+			continue
+		}
+
+		eventId := kvPair[1]
+		data, err := q.redisClient.WithContext(ctx).HGet(q.genPoolKey(topic), eventId).Result()
+		if err != nil && err != redis.Nil {
+			logs.CtxWarn(ctx, "[runConsumer] HGet", logs.String("err", err.Error()))
+			if q.persistFn != nil {
+				_ = q.persistFn(&EventEntity{
+					EventId: el_utils.String2Int64(eventId),
+					Topic:   topic,
+				})
+			}
+			q.wg.Done()
+			continue
+		}
+		event := &EventEntity{}
+		_ = jsoniter.UnmarshalFromString(data, event)
+
+		for _, s := range subscriberList {
+			subscriber := s
+			el_utils.GoSafeWithCtx(ctx, func(ctx context.Context) {
+				el_utils.Retry(3, 0, func() (success bool) {
+					err = subscriber.Handle(ctx, event)
+					if err != nil {
+						logs.CtxWarn(ctx, "[runConsumer] subscriber.Handle", logs.String("err", err.Error()))
+						return false
+					}
+					return true
+				})
+			})
+		}
+
+		err = q.redisClient.WithContext(ctx).HDel(q.genPoolKey(topic), eventId).Err()
+		if err != nil {
+			logs.CtxWarn(ctx, "[runConsumer] HDel", logs.String("err", err.Error()))
+		}
+		q.wg.Done()
+	}
+	return nil
+}
+
+// todo 原子性保证
+func (q *DelayQueue) PublishEvent(ctx context.Context, event *EventEntity) error {
 	pipeline := q.redisClient.WithContext(ctx).Pipeline()
 	defer pipeline.Close()
 
-	pipeline.HSet(q.genPoolKey(event.Topic), strconv.FormatInt(event.EventId, 10), event.Body)
+	pipeline.HSet(q.genPoolKey(event.Topic), strconv.FormatInt(event.EventId, 10), el_utils.ToJsonString(event))
 	pipeline.ZAdd(q.genBucketKey(event.Topic), redis.Z{
 		Member: strconv.FormatInt(event.EventId, 10),
 		Score:  float64(event.EffectTime.Unix()),
 	})
 	_, err := pipeline.Exec()
-	if err != nil { //报错后进行一次额外尝试
+	if err != nil {
 		logs.CtxWarn(ctx, "pipeline.Exec", logs.String("err", err.Error()))
-		_, err = pipeline.Exec()
+		return err
 	}
-	return err
+	logs.CtxInfo(ctx, "publish event success", logs.String("event", el_utils.ToJsonString(event)))
+	return nil
 }
+
+//-- keys: pendingKey, readyKey
+//-- argv: currentTime
+//local msgs = redis.call('ZRangeByScore', KEYS[1], '0', ARGV[1])  -- 从 pending key 中找出已到投递时间的消息
+//if (#msgs == 0) then return end
+//local args2 = {'LPush', KEYS[2]} -- 将他们放入 ready key 中
+//for _,v in ipairs(msgs) do
+//table.insert(args2, v)
+//end
+//redis.call(unpack(args2))
+//redis.call('ZRemRangeByScore', KEYS[1], '0', ARGV[1])  -- 从 pending key 中删除已投递的消息
+//————————————————
+//版权声明：本文为CSDN博主「十一技术斩」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/uuqaz/article/details/125916298
