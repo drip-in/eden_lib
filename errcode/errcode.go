@@ -32,13 +32,10 @@ const (
 )
 
 var (
-	Success = &InnerErrCode{code: COMMON, msg: ""}
-	// stable:stable, code:6001001, starlingKey:, msg:服务器打瞌睡了，请稍后再试。
-	ErrServiceInternal = &InnerErrCode{code: COMMON + 1, msg: "服务器打瞌睡了，请稍后再试"}
-	// stable:stable, code:6001002, starlingKey:, msg:参数不合法
-	ErrInvalidParam = &InnerErrCode{code: COMMON + 2, msg: "参数不合法"}
-	// stable:stable, code:6001005, starlingKey:, msg:操作频繁，请稍后再试。
-	ErrLocked = &InnerErrCode{code: COMMON + 3, msg: "操作频繁，请稍后再试"}
+	Success            = &InnerErrCode{code: COMMON, msg: ""}
+	ErrServiceInternal = &InnerErrCode{code: COMMON + 1, msg: "服务器开小差了，请稍后再试"}
+	ErrInvalidParam    = &InnerErrCode{code: COMMON + 2, msg: "参数不合法"}
+	ErrLocked          = &InnerErrCode{code: COMMON + 3, msg: "操作频繁，请稍后再试"}
 )
 
 type InnerErrCode struct {
