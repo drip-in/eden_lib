@@ -10,13 +10,12 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/plugin/dbresolver"
 	"sync"
+	"time"
 )
 
 type DbType string
 
 const (
-	EdenDBName = "eden"
-
 	Read  = DbType("read")
 	Write = DbType("write")
 
@@ -30,16 +29,28 @@ type DBClient struct {
 	db *gorm.DB
 }
 
-func NewDBClient(dbConf *conf.Database, logLevel logger.LogLevel, customLogger *logs.Logger) (*DBClient, error) {
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Port, dbConf.Name)
+func NewDBClient(dbConf *conf.Mysql, logLevel logger.LogLevel, customLogger *logs.Logger) (*DBClient, error) {
+	//dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Port, dbConf.Name)
 	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN:                       dsn,   // DSN data source name
-		DefaultStringSize:         256,   // string 类型字段的默认长度
-		DisableDatetimePrecision:  true,  // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
-		DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-		DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
-		SkipInitializeWithVersion: false, // 根据版本自动配置
-	}), &gorm.Config{QueryFields: true}, Logger{LogLevel: logLevel, IgnoreRecordNotFoundError: true, Logger: customLogger})
+		DSN:                       dbConf.Dsn(), // DSN data source name
+		DefaultStringSize:         256,          // string 类型字段的默认长度
+		DisableDatetimePrecision:  true,         // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
+		DontSupportRenameIndex:    true,         // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
+		DontSupportRenameColumn:   true,         // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
+		SkipInitializeWithVersion: false,        // 根据版本自动配置
+	}),
+		&gorm.Config{QueryFields: true},
+		Logger{
+			LogLevel:                  logLevel,
+			IgnoreRecordNotFoundError: true,
+			Logger:                    customLogger,
+		},
+		ConnPool{
+			ConnMaxIdleTime: 300 * time.Second,
+			ConnMaxLifetime: 300 * time.Second,
+			MaxIdleConns:    dbConf.MaxIdleConns,
+			MaxOpenConns:    dbConf.MaxOpenConns,
+		})
 	if err != nil {
 		return nil, err
 	}
