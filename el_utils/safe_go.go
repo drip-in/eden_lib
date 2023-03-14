@@ -6,18 +6,18 @@ import (
 	"runtime"
 )
 
-func GoSafeWithCtx(ctx context.Context, fn func(), cleanups ...func()) {
+func GoSafeWithCtx(ctx context.Context, fn func(ctx context.Context), cleanups ...func()) {
 	go RunSafeFn(ctx, fn, cleanups...)
 }
 
-func GoSafe(fn func(), cleanups ...func()) {
+func GoSafe(fn func(ctx context.Context), cleanups ...func()) {
 	ctx := context.Background()
 	go RunSafeFn(ctx, fn, cleanups...)
 }
 
-func RunSafeFn(ctx context.Context, fn func(), cleanups ...func()) {
+func RunSafeFn(ctx context.Context, fn func(ctx context.Context), cleanups ...func()) {
 	defer RecoverAndCleanup(ctx, cleanups...)
-	fn()
+	fn(ctx)
 }
 
 func RecoverAndCleanup(ctx context.Context, cleanups ...func()) {

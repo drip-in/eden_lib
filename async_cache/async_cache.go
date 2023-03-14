@@ -1,3 +1,6 @@
+/**
+此包用于缓存请求过的数据，会定期刷新所有缓存的key，且无过期时间
+*/
 package async_cache
 
 import (

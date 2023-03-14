@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Retry(count int, sleep int, f func() (success bool)) bool {
+func Retry(count int, sleep time.Duration, f func() (success bool)) bool {
 	for retry := 0; retry < count; retry++ {
 		success := f()
 		if success {
@@ -15,8 +15,8 @@ func Retry(count int, sleep int, f func() (success bool)) bool {
 			if left == 0 {
 				return false
 			} else {
-				logs.Warn("[Retry]", logs.Int("sleep", sleep), logs.Int("left", left))
-				time.Sleep(time.Duration(sleep) * time.Second)
+				logs.Warn("[Retry]", logs.Int("sleep", int(sleep/1e6)), logs.Int("left", left))
+				time.Sleep(sleep)
 			}
 		}
 	}
