@@ -28,6 +28,8 @@ const (
 
 type Field = zap.Field
 
+type LogFunc func(ctx context.Context, msg string, fields ...Field)
+
 func (l *Logger) Debug(msg string, fields ...Field) {
 	l.l.Debug(msg, fields...)
 }
@@ -146,23 +148,23 @@ var (
 	Durationp   = zap.Durationp
 	Any         = zap.Any
 
-	Info   = std.Info
-	Infof  = std.Info
-	Warn   = std.Warn
-	Error  = std.Error
-	DPanic = std.DPanic
-	Panic  = std.Panic
-	Fatal  = std.Fatal
-	Debug  = std.Debug
+	Info   LogFunc
+	Infof  LogFunc
+	Warn   LogFunc
+	Error  LogFunc
+	DPanic LogFunc
+	Panic  LogFunc
+	Fatal  LogFunc
+	Debug  LogFunc
 
-	CtxInfo   = std.CtxInfo
-	CtxInfof  = std.CtxInfo
-	CtxWarn   = std.CtxWarn
-	CtxError  = std.CtxError
-	CtxDPanic = std.CtxDPanic
-	CtxPanic  = std.CtxPanic
-	CtxFatal  = std.CtxFatal
-	CtxDebug  = std.CtxDebug
+	CtxInfo   LogFunc
+	CtxInfof  LogFunc
+	CtxWarn   LogFunc
+	CtxError  LogFunc
+	CtxDPanic LogFunc
+	CtxPanic  LogFunc
+	CtxFatal  LogFunc
+	CtxDebug  LogFunc
 )
 
 type Logger struct {
@@ -224,6 +226,24 @@ func InitZap(conf *conf.Zap) {
 	std = &Logger{
 		l: logger,
 	}
+
+	Info = std.Info
+	Infof = std.Info
+	Warn = std.Warn
+	Error = std.Error
+	DPanic = std.DPanic
+	Panic = std.Panic
+	Fatal = std.Fatal
+	Debug = std.Debug
+
+	CtxInfo = std.CtxInfo
+	CtxInfof = std.CtxInfo
+	CtxWarn = std.CtxWarn
+	CtxError = std.CtxError
+	CtxDPanic = std.CtxDPanic
+	CtxPanic = std.CtxPanic
+	CtxFatal = std.CtxFatal
+	CtxDebug = std.CtxDebug
 }
 
 // getEncoderConfig 获取zapcore.EncoderConfig
