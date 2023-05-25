@@ -176,6 +176,10 @@ func (l *Logger) Sync() error {
 	return l.l.Sync()
 }
 
+func Default() *Logger {
+	return std
+}
+
 func Sync() error {
 	if std != nil {
 		return std.Sync()
