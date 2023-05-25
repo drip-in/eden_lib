@@ -222,7 +222,7 @@ func InitZap(conf *conf.Zap) {
 	logger := zap.New(zapcore.NewTee(cores[:]...), zap.AddCaller())
 
 	if zapConf.ShowLine {
-		logger = logger.WithOptions(zap.AddCaller())
+		logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 	std = &Logger{
 		l: logger,
