@@ -28,7 +28,8 @@ const (
 
 type Field = zap.Field
 
-type LogFunc func(ctx context.Context, msg string, fields ...Field)
+type LogFunc func(msg string, fields ...Field)
+type LogCtxFunc func(ctx context.Context, msg string, fields ...Field)
 
 func (l *Logger) Debug(msg string, fields ...Field) {
 	l.l.Debug(msg, fields...)
@@ -157,14 +158,14 @@ var (
 	Fatal  LogFunc
 	Debug  LogFunc
 
-	CtxInfo   LogFunc
-	CtxInfof  LogFunc
-	CtxWarn   LogFunc
-	CtxError  LogFunc
-	CtxDPanic LogFunc
-	CtxPanic  LogFunc
-	CtxFatal  LogFunc
-	CtxDebug  LogFunc
+	CtxInfo   LogCtxFunc
+	CtxInfof  LogCtxFunc
+	CtxWarn   LogCtxFunc
+	CtxError  LogCtxFunc
+	CtxDPanic LogCtxFunc
+	CtxPanic  LogCtxFunc
+	CtxFatal  LogCtxFunc
+	CtxDebug  LogCtxFunc
 )
 
 type Logger struct {
