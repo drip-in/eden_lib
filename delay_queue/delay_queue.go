@@ -90,7 +90,10 @@ func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubsc
 					if atomic.LoadInt32(&q.isRunning) == 0 {
 						break
 					}
-					_ = q.carryEventToQueue(topic)
+					count, err := q.carryEventToQueue(topic)
+					if err == nil && count == 0 {
+						time.Sleep(100 * time.Second)
+					}
 				}
 			})
 
@@ -104,13 +107,14 @@ func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubsc
 
 // 扫描zset中到期的任务，添加到对应topic的待消费队列里，并从Bucket中删除已进入待消费队列的事件;
 // 每次都取指定数量,防止消息突增
-func (q *DelayQueue) carryEventToQueue(topic string) error {
+func (q *DelayQueue) carryEventToQueue(topic string) (int64, error) {
 	script := redis.NewScript(`
 	  local members = redis.call('ZRangeByScore', KEYS[1], '0', ARGV[1], 'limit', 0, 20)
 	  if(next(members) ~= nil) then
 		redis.call('ZRem', KEYS[1], 0, unpack(members, 1, #members))
 		redis.call('RPush', KEYS[2], unpack(members, 1, #members))
 	  end
+      return #members
 	  `)
 	ctx := context.Background()
 	delayKey := q.genBucketKey(topic)
@@ -118,10 +122,9 @@ func (q *DelayQueue) carryEventToQueue(topic string) error {
 	res, err := script.Run(q.redisClient.WithContext(ctx), []string{delayKey, readyKey}, el_utils.ToString(time.Now().Unix())).Result()
 	if err != nil {
 		logs.CtxError(ctx, "[carryEventToQueue] script.Run", logs.String("err", err.Error()))
-		return err
+		return 0, err
 	}
-	logs.CtxWarn(ctx, "[carryEventToQueue]", logs.String("res", el_utils.ToString(res)))
-	return nil
+	return res.(int64), nil
 }
 
 func (q *DelayQueue) runConsumer(topic string, subscriberList []IEventSubscriber) error {
