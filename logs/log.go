@@ -219,7 +219,7 @@ func InitZap(conf *conf.Zap) {
 		getEncoderCore(fmt.Sprintf("./%s/server_warn.log", zapConf.Director), warnPriority),
 		getEncoderCore(fmt.Sprintf("./%s/server_error.log", zapConf.Director), errorPriority),
 	}
-	logger := zap.New(zapcore.NewTee(cores[:]...), zap.AddCaller())
+	logger := zap.New(zapcore.NewTee(cores[:]...))
 
 	if zapConf.ShowLine {
 		logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
