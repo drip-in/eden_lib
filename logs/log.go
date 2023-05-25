@@ -28,6 +28,9 @@ const (
 
 type Field = zap.Field
 
+type LogFunc func(msg string, fields ...Field)
+type LogCtxFunc func(ctx context.Context, msg string, fields ...Field)
+
 func (l *Logger) Debug(msg string, fields ...Field) {
 	l.l.Debug(msg, fields...)
 }
@@ -146,23 +149,23 @@ var (
 	Durationp   = zap.Durationp
 	Any         = zap.Any
 
-	Info   = std.Info
-	Infof  = std.Info
-	Warn   = std.Warn
-	Error  = std.Error
-	DPanic = std.DPanic
-	Panic  = std.Panic
-	Fatal  = std.Fatal
-	Debug  = std.Debug
+	Info   LogFunc
+	Infof  LogFunc
+	Warn   LogFunc
+	Error  LogFunc
+	DPanic LogFunc
+	Panic  LogFunc
+	Fatal  LogFunc
+	Debug  LogFunc
 
-	CtxInfo   = std.CtxInfo
-	CtxInfof  = std.CtxInfo
-	CtxWarn   = std.CtxWarn
-	CtxError  = std.CtxError
-	CtxDPanic = std.CtxDPanic
-	CtxPanic  = std.CtxPanic
-	CtxFatal  = std.CtxFatal
-	CtxDebug  = std.CtxDebug
+	CtxInfo   LogCtxFunc
+	CtxInfof  LogCtxFunc
+	CtxWarn   LogCtxFunc
+	CtxError  LogCtxFunc
+	CtxDPanic LogCtxFunc
+	CtxPanic  LogCtxFunc
+	CtxFatal  LogCtxFunc
+	CtxDebug  LogCtxFunc
 )
 
 type Logger struct {
@@ -174,6 +177,10 @@ var zapConf *conf.Zap
 
 func (l *Logger) Sync() error {
 	return l.l.Sync()
+}
+
+func Default() *Logger {
+	return std
 }
 
 func Sync() error {
@@ -212,14 +219,32 @@ func InitZap(conf *conf.Zap) {
 		getEncoderCore(fmt.Sprintf("./%s/server_warn.log", zapConf.Director), warnPriority),
 		getEncoderCore(fmt.Sprintf("./%s/server_error.log", zapConf.Director), errorPriority),
 	}
-	logger := zap.New(zapcore.NewTee(cores[:]...), zap.AddCaller())
+	logger := zap.New(zapcore.NewTee(cores[:]...))
 
 	if zapConf.ShowLine {
-		logger = logger.WithOptions(zap.AddCaller())
+		logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 	std = &Logger{
 		l: logger,
 	}
+
+	Info = std.Info
+	Infof = std.Info
+	Warn = std.Warn
+	Error = std.Error
+	DPanic = std.DPanic
+	Panic = std.Panic
+	Fatal = std.Fatal
+	Debug = std.Debug
+
+	CtxInfo = std.CtxInfo
+	CtxInfof = std.CtxInfo
+	CtxWarn = std.CtxWarn
+	CtxError = std.CtxError
+	CtxDPanic = std.CtxDPanic
+	CtxPanic = std.CtxPanic
+	CtxFatal = std.CtxFatal
+	CtxDebug = std.CtxDebug
 }
 
 // getEncoderConfig 获取zapcore.EncoderConfig
@@ -272,18 +297,17 @@ func getEncoderCore(fileName string, level zapcore.LevelEnabler) (core zapcore.C
 //@return: zapcore.WriteSyncer, error
 
 func getWriteSyncer(file string) zapcore.WriteSyncer {
-	lumberJackLogger := &lumberjack.Logger{
-		Filename:   file, // 日志文件的位置
-		MaxSize:    10,   // 在进行切割之前，日志文件的最大大小（以MB为单位）
-		MaxBackups: 200,  // 保留旧文件的最大个数
-		MaxAge:     30,   // 保留旧文件的最大天数
-		Compress:   true, // 是否压缩/归档旧文件
-	}
-
-	if zapConf.LogInConsole {
+	if zapConf.LogInFile {
+		lumberJackLogger := &lumberjack.Logger{
+			Filename:   file, // 日志文件的位置
+			MaxSize:    10,   // 在进行切割之前，日志文件的最大大小（以MB为单位）
+			MaxBackups: 200,  // 保留旧文件的最大个数
+			MaxAge:     30,   // 保留旧文件的最大天数
+			Compress:   true, // 是否压缩/归档旧文件
+		}
 		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberJackLogger))
 	}
-	return zapcore.AddSync(lumberJackLogger)
+	return zapcore.AddSync(os.Stdout)
 }
 
 // 自定义日志输出时间格式

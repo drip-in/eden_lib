@@ -29,4 +29,5 @@ type Zap struct {
 	EncodeLevel   string `mapstructure:"encode-level" json:"encodeLevel" yaml:"encode-level"`       // 编码级
 	StacktraceKey string `mapstructure:"stacktrace-key" json:"stacktraceKey" yaml:"stacktrace-key"` // 栈名
 	LogInConsole  bool   `mapstructure:"log-in-console" json:"logInConsole" yaml:"log-in-console"`  // 输出控制台
+	LogInFile     bool   `mapstructure:"log-in-file" json:"LogInFile" yaml:"log-in-file"`           // 输出日志文件
 }
