@@ -1,6 +1,6 @@
 module github.com/drip-in/eden_lib
 
-go 1.17
+go 1.19
 
 require (
 	github.com/cespare/xxhash v1.1.0
@@ -10,8 +10,8 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.3.0
 	gorm.io/driver/mysql v1.4.4
-	gorm.io/gorm v1.24.1
-	gorm.io/plugin/dbresolver v1.3.0
+	gorm.io/gorm v1.25.2
+	gorm.io/plugin/dbresolver v1.4.2
 )
 
 require (
