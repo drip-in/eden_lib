@@ -25,7 +25,7 @@ type EdenStatus struct {
 var (
 	EdenSuccess = &EdenStatus{StatusCode: COMMON, StatusMsg: ""}
 	// stable:stable, code:6001001, starlingKey:, msg:服务器打瞌睡了，请稍后再试。
-	EdenServiceInternal = &EdenStatus{StatusCode: COMMON + 1, StatusMsg: "服务器打瞌睡了，请稍后再试"}
+	EdenServiceInternal = &EdenStatus{StatusCode: COMMON + 1, StatusMsg: "服务器开小差了，请稍后再试"}
 	// stable:stable, code:6001002, starlingKey:, msg:参数不合法
 	EdenInvalidParam = &EdenStatus{StatusCode: COMMON + 2, StatusMsg: "参数不合法"}
 	// stable:stable, code:6001005, starlingKey:, msg:操作频繁，请稍后再试。

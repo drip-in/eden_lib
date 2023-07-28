@@ -90,7 +90,7 @@ func (this *node) execute(ctx context.Context, param interface{}, taskContext in
 
 	//等待前置满足
 	if this.cond != nil {
-		logs.CtxDebug(ctx, "", logs.String(fmt.Sprintf("node:%v wait"), this.taskName))
+		logs.CtxDebug(ctx, "node wait", logs.String("node", this.taskName))
 		this.cond.Wait()
 	}
 
