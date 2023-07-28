@@ -11,7 +11,7 @@ require (
 	golang.org/x/crypto v0.3.0
 	gorm.io/driver/mysql v1.4.4
 	gorm.io/gorm v1.25.2
-	gorm.io/plugin/dbresolver v1.2.3
+	gorm.io/plugin/dbresolver v1.4.2
 )
 
 require (
