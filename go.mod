@@ -1,6 +1,6 @@
 module github.com/drip-in/eden_lib
 
-go 1.17
+go 1.19
 
 require (
 	github.com/cespare/xxhash v1.1.0
