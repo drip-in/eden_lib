@@ -74,15 +74,16 @@ func (p *Locker) tryLock(ctx context.Context, key string, duration time.Duration
 }
 
 func (p *Locker) UnLock(ctx context.Context, key string, value interface{}) error {
-	currentValue, err := p.redisClient.WithContext(ctx).Get(key).Int64()
+	cacheKey := p.genCacheKey(key)
+	currentValue, err := p.redisClient.WithContext(ctx).Get(cacheKey).Int64()
 	if err != nil {
-		logs.Warn("redis client get", logs.String("err", err.Error()), logs.String("cacheKey", key))
+		logs.Warn("redis client get", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
 		return err
 	}
 	if currentValue == value { // 防止本锁超时后, 解锁别人的锁
-		_, err = p.redisClient.WithContext(ctx).Del(key).Result()
+		_, err = p.redisClient.WithContext(ctx).Del(cacheKey).Result()
 		if err != nil {
-			logs.Error("redis client del", logs.String("err", err.Error()), logs.String("cacheKey", key))
+			logs.Error("redis client del", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
 			return err
 		}
 	}
