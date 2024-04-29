@@ -19,7 +19,7 @@ type Stable interface {
 // rpc use
 type ErrCode interface {
 	Code() int32
-	Error() string
+	Msg() string
 }
 
 const (
@@ -51,6 +51,10 @@ func (i *InnerErrCode) Code() int32 {
 	return i.code
 }
 
+func (i *InnerErrCode) Msg() string {
+	return i.msg
+}
+
 func (i *InnerErrCode) Error() string {
 	return i.msg
 }
@@ -59,7 +63,7 @@ func (i *InnerErrCode) Error() string {
 func ExtErrCodeMsg(base ErrCode, extMsg string, args ...interface{}) error {
 	return &InnerErrCode{
 		code: base.Code(),
-		msg:  fmt.Sprintf("%v: %v", base.Error(), fmt.Sprintf(extMsg, args...)),
+		msg:  fmt.Sprintf("%v: %v", base.Msg(), fmt.Sprintf(extMsg, args...)),
 	}
 }
 

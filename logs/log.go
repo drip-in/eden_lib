@@ -32,11 +32,15 @@ type LogFunc func(msg string, fields ...Field)
 type LogCtxFunc func(ctx context.Context, msg string, fields ...Field)
 
 func (l *Logger) Debug(msg string, fields ...Field) {
-	l.l.Debug(msg, fields...)
+	if l.conf.ShowDebug {
+		l.l.Debug(msg, fields...)
+	}
 }
 
 func (l *Logger) CtxDebug(ctx context.Context, msg string, fields ...Field) {
-	l.l.Debug(msg, fields...)
+	if l.conf.ShowDebug {
+		l.l.Debug(msg, fields...)
+	}
 }
 
 func (l *Logger) Info(msg string, fields ...Field) {
@@ -169,7 +173,8 @@ var (
 )
 
 type Logger struct {
-	l *zap.Logger // zap ensure that zap.Logger is safe for concurrent use
+	l    *zap.Logger // zap ensure that zap.Logger is safe for concurrent use
+	conf *conf.Zap
 }
 
 var std *Logger
@@ -225,7 +230,8 @@ func InitZap(conf *conf.Zap) {
 		logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 	std = &Logger{
-		l: logger,
+		l:    logger,
+		conf: zapConf,
 	}
 
 	Info = std.Info
