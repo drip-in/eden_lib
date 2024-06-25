@@ -26,7 +26,7 @@ func init() {
 // genLogId generates a global unique log id for request
 // format: %Y%m%d%H%M%S + ip + 5位随机数
 // python runtime使用的random uuid, 这里简单使用random产生一个5位数字随机串
-func genLogId() string {
+func GenLogId() string {
 	buf := make([]byte, 0, 64)
 	buf = time.Now().AppendFormat(buf, "20060102150405")
 	buf = append(buf, fullLengthLocalIP...)
