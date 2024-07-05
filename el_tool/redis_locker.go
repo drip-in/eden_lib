@@ -66,7 +66,7 @@ func (p *Locker) tryLock(ctx context.Context, key string, duration time.Duration
 	}
 	if success {
 		return func() {
-			p.UnLock(ctx, cacheKey, cacheValue)
+			p.UnLock(ctx, key, cacheValue)
 		}
 	} else {
 		return nil
