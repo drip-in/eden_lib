@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/drip-in/eden_lib/logs"
 	"github.com/go-redis/redis"
+	"gorm.io/gorm/utils"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func (p *Locker) TryLockWithDuration(ctx context.Context, key string, duration t
 	return p.tryLock(ctx, key, duration)
 }
 
-func (p *Locker) TryLockWithValAndDuration(ctx context.Context, key string, value interface{}, duration time.Duration) bool {
+func (p *Locker) TryLockWithValAndDuration(ctx context.Context, key string, value string, duration time.Duration) bool {
 	if key == "" {
 		panic("empty key")
 	}
@@ -66,16 +67,16 @@ func (p *Locker) tryLock(ctx context.Context, key string, duration time.Duration
 	}
 	if success {
 		return func() {
-			p.UnLock(ctx, key, cacheValue)
+			p.UnLock(ctx, key, utils.ToString(cacheValue))
 		}
 	} else {
 		return nil
 	}
 }
 
-func (p *Locker) UnLock(ctx context.Context, key string, value interface{}) error {
+func (p *Locker) UnLock(ctx context.Context, key string, value string) error {
 	cacheKey := p.genCacheKey(key)
-	currentValue, err := p.redisClient.WithContext(ctx).Get(cacheKey).Int64()
+	currentValue, err := p.redisClient.WithContext(ctx).Get(cacheKey).Result()
 	if err != nil {
 		logs.Warn("redis client get", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
 		return err
@@ -86,6 +87,8 @@ func (p *Locker) UnLock(ctx context.Context, key string, value interface{}) erro
 			logs.Error("redis client del", logs.String("err", err.Error()), logs.String("cacheKey", cacheKey))
 			return err
 		}
+	} else {
+		logs.CtxError(ctx, "redis unlock fail, value not equal")
 	}
 	return nil
 }
