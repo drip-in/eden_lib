@@ -21,8 +21,8 @@ func InitStorageImpl(s IStorage) {
 type ILocker interface {
 	TryLock(ctx context.Context, key string) (unLockFunc func())
 	TryLockWithDuration(ctx context.Context, key string, duration time.Duration) (unLockFunc func())
-	TryLockWithValAndDuration(ctx context.Context, key string, value interface{}, duration time.Duration) bool
-	UnLock(ctx context.Context, key string, value interface{}) error
+	TryLockWithValAndDuration(ctx context.Context, key string, value string, duration time.Duration) bool
+	UnLock(ctx context.Context, key string, value string) error
 }
 
 type IStorage interface {
