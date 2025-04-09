@@ -1,6 +1,7 @@
-package el_utils
+package logs
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
@@ -9,9 +10,14 @@ import (
 	"time"
 )
 
+const (
+	CtxLogIDKey = "K_LOGID"
+)
+
 var (
 	localIP           string
 	fullLengthLocalIP []byte
+	unknown           = "-"
 )
 
 func init() {
@@ -39,4 +45,16 @@ func GenLogId() string {
 	uuidNum := binary.BigEndian.Uint32(uuidBuf)
 	buf = append(buf, fmt.Sprintf("%05d", uuidNum)[:5]...)
 	return string(buf)
+}
+
+func LogIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return unknown
+	}
+	val := ctx.Value(CtxLogIDKey)
+	if val != nil {
+		logID := val.(string)
+		return logID
+	}
+	return unknown
 }
