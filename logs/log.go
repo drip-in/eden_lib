@@ -39,7 +39,7 @@ func (l *Logger) Debug(msg string, fields ...Field) {
 
 func (l *Logger) CtxDebug(ctx context.Context, msg string, fields ...Field) {
 	if l.conf.ShowDebug {
-		l.l.Debug(msg, fields...)
+		l.l.Debug(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 	}
 }
 
@@ -48,7 +48,7 @@ func (l *Logger) Info(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxInfo(ctx context.Context, msg string, fields ...Field) {
-	l.l.Info(msg, fields...)
+	l.l.Info(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) Warn(msg string, fields ...Field) {
@@ -56,7 +56,7 @@ func (l *Logger) Warn(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxWarn(ctx context.Context, msg string, fields ...Field) {
-	l.l.Warn(msg, fields...)
+	l.l.Warn(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) Error(msg string, fields ...Field) {
@@ -64,7 +64,7 @@ func (l *Logger) Error(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxError(ctx context.Context, msg string, fields ...Field) {
-	l.l.Error(msg, fields...)
+	l.l.Error(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) DPanic(msg string, fields ...Field) {
@@ -72,7 +72,7 @@ func (l *Logger) DPanic(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxDPanic(ctx context.Context, msg string, fields ...Field) {
-	l.l.DPanic(msg, fields...)
+	l.l.DPanic(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) Panic(msg string, fields ...Field) {
@@ -80,7 +80,7 @@ func (l *Logger) Panic(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxPanic(ctx context.Context, msg string, fields ...Field) {
-	l.l.Panic(msg, fields...)
+	l.l.Panic(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) Fatal(msg string, fields ...Field) {
@@ -88,7 +88,7 @@ func (l *Logger) Fatal(msg string, fields ...Field) {
 }
 
 func (l *Logger) CtxFatal(ctx context.Context, msg string, fields ...Field) {
-	l.l.Fatal(msg, fields...)
+	l.l.Fatal(fmt.Sprintf("%v  %v", LogIDFromContext(ctx), msg), fields...)
 }
 
 func (l *Logger) ConvertToFields(v ...interface{}) []Field {
