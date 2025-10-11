@@ -3,7 +3,7 @@ package delay_queue
 import (
 	"context"
 	"fmt"
-	"github.com/drip-in/eden_lib/el_utils"
+	"github.com/drip-in/eden_lib/pkg"
 	"github.com/drip-in/eden_lib/godash/maps"
 	"github.com/drip-in/eden_lib/logs"
 	"github.com/go-redis/redis"
@@ -85,7 +85,7 @@ func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubsc
 		for _, t := range topicList {
 			topic := t
 			// 定时topic扫描到期的事件
-			el_utils.GoSafe(func(ctx context.Context) {
+			pkg.GoSafe(func(ctx context.Context) {
 				for {
 					if atomic.LoadInt32(&q.isRunning) == 0 {
 						break
@@ -98,7 +98,7 @@ func (q *DelayQueue) InitOnce(subscriber IEventSubscriber, others ...IEventSubsc
 			})
 
 			// 消费topic队列的事件
-			el_utils.GoSafe(func(ctx context.Context) {
+			pkg.GoSafe(func(ctx context.Context) {
 				_ = q.runConsumer(topic, topicConsumerMap[topic])
 			})
 		}
@@ -119,7 +119,7 @@ func (q *DelayQueue) carryEventToQueue(topic string) (int64, error) {
 	ctx := context.Background()
 	delayKey := q.genBucketKey(topic)
 	readyKey := q.genQueueKey(topic)
-	res, err := script.Run(q.redisClient.WithContext(ctx), []string{delayKey, readyKey}, el_utils.ToString(time.Now().Unix())).Result()
+	res, err := script.Run(q.redisClient.WithContext(ctx), []string{delayKey, readyKey}, pkg.ToString(time.Now().Unix())).Result()
 	if err != nil {
 		logs.CtxError(ctx, "[carryEventToQueue] script.Run", logs.String("err", err.Error()))
 		return 0, err
@@ -151,7 +151,7 @@ func (q *DelayQueue) runConsumer(topic string, subscriberList []IEventSubscriber
 			logs.CtxWarn(ctx, "[runConsumer] HGet", logs.String("err", err.Error()))
 			if q.persistFn != nil {
 				_ = q.persistFn(&EventEntity{
-					EventId: el_utils.String2Int64(eventId),
+					EventId: pkg.String2Int64(eventId),
 					Topic:   topic,
 				})
 			}
@@ -163,8 +163,8 @@ func (q *DelayQueue) runConsumer(topic string, subscriberList []IEventSubscriber
 
 		for _, s := range subscriberList {
 			subscriber := s
-			el_utils.GoSafeWithCtx(ctx, func(ctx context.Context) {
-				el_utils.Retry(3, 0, func() (success bool) {
+			pkg.GoSafeWithCtx(ctx, func(ctx context.Context) {
+				pkg.Retry(3, 0, func() (success bool) {
 					err = subscriber.Handle(ctx, event)
 					if err != nil {
 						logs.CtxWarn(ctx, "[runConsumer] subscriber.Handle", logs.String("err", err.Error()))
@@ -189,7 +189,7 @@ func (q *DelayQueue) PublishEvent(ctx context.Context, event *EventEntity) error
 	pipeline := q.redisClient.WithContext(ctx).Pipeline()
 	defer pipeline.Close()
 
-	pipeline.HSet(q.genPoolKey(event.Topic), strconv.FormatInt(event.EventId, 10), el_utils.ToJsonString(event))
+	pipeline.HSet(q.genPoolKey(event.Topic), strconv.FormatInt(event.EventId, 10), pkg.ToJsonString(event))
 	pipeline.ZAdd(q.genBucketKey(event.Topic), redis.Z{
 		Member: strconv.FormatInt(event.EventId, 10),
 		Score:  float64(event.EffectTime.Unix()),
@@ -199,7 +199,7 @@ func (q *DelayQueue) PublishEvent(ctx context.Context, event *EventEntity) error
 		logs.CtxWarn(ctx, "pipeline.Exec", logs.String("err", err.Error()))
 		return err
 	}
-	logs.CtxInfo(ctx, "publish event success", logs.String("event", el_utils.ToJsonString(event)))
+	logs.CtxInfo(ctx, "publish event success", logs.String("event", pkg.ToJsonString(event)))
 	return nil
 }
 

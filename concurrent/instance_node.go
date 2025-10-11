@@ -3,7 +3,7 @@ package concurrent
 import (
 	"context"
 	"fmt"
-	"github.com/drip-in/eden_lib/el_utils"
+	"github.com/drip-in/eden_lib/pkg"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -119,7 +119,7 @@ func (this *node) safeExecute(ctx context.Context, param interface{}, taskContex
 
 	defer func() {
 		if e := recover(); e != nil {
-			logs.CtxDebug(ctx, "execute", logs.String(fmt.Sprintf("task"), this.taskName), logs.String("err", el_utils.ToJsonString(e)))
+			logs.CtxDebug(ctx, "execute", logs.String(fmt.Sprintf("task"), this.taskName), logs.String("err", pkg.ToJsonString(e)))
 			err = fmt.Errorf("%v", e)
 			return
 		}

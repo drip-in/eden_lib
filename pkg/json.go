@@ -1,4 +1,4 @@
-package el_utils
+package pkg
 
 import (
 	"fmt"
@@ -199,4 +199,3 @@ func ToInt64Slice(i interface{}) []int64 {
 	}
 	return nil
 }
-
