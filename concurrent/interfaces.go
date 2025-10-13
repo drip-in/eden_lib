@@ -2,7 +2,7 @@ package concurrent
 
 import (
 	"context"
-	"github.com/drip-in/eden_lib/el_utils"
+	"github.com/drip-in/eden_lib/pkg"
 	"sync"
 
 	"github.com/drip-in/eden_lib/gopool"
@@ -14,7 +14,7 @@ var pool gopool.Pool
 func init() {
 	pool = gopool.NewPool(1000)
 	pool.SetPanicHandler(func(ctx context.Context, e interface{}) {
-		logs.CtxError(ctx, "panic", logs.String("err", el_utils.ToJsonString(e)))
+		logs.CtxError(ctx, "panic", logs.String("err", pkg.ToJsonString(e)))
 	})
 }
 

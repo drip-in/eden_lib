@@ -1,6 +1,6 @@
 // 执行模板的辅助类
 
-package el_utils
+package pkg
 
 import (
 	"fmt"

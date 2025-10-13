@@ -1,4 +1,4 @@
-package el_utils
+package pkg
 
 import (
 	"fmt"

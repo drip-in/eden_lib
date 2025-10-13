@@ -29,6 +29,8 @@ const (
 
 const (
 	COMMON int32 = 0
+
+	INFRA int32 = 100
 )
 
 var (
@@ -36,6 +38,9 @@ var (
 	ErrServiceInternal = &InnerErrCode{code: COMMON + 1, msg: "服务器开小差了，请稍后再试"}
 	ErrInvalidParam    = &InnerErrCode{code: COMMON + 2, msg: "参数不合法"}
 	ErrLocked          = &InnerErrCode{code: COMMON + 3, msg: "操作频繁，请稍后再试"}
+
+	KafkaPublishTimeout     = &InnerErrCode{code: INFRA + 1, msg: "kafka publish timeout"}
+	KafkaProducerInitFailed = &InnerErrCode{code: INFRA + 2, msg: "kafka producer init failed"}
 )
 
 type InnerErrCode struct {

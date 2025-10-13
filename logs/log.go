@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/drip-in/eden_lib/conf"
-	"github.com/drip-in/eden_lib/el_utils/common_util"
+	"github.com/drip-in/eden_lib/pkg/common_util"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

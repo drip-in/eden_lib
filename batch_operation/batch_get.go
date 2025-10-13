@@ -2,7 +2,7 @@ package batch_operation
 
 import (
 	"context"
-	"github.com/drip-in/eden_lib/el_utils"
+	"github.com/drip-in/eden_lib/pkg"
 	"github.com/drip-in/eden_lib/logs"
 	"go.uber.org/atomic"
 	"math"
@@ -98,10 +98,10 @@ const (
 
 func (c *ConcurrentHandlerInBatch) handlerWithRetry(ctx context.Context, batchInParams []interface{}, dataMap *sync.Map) error {
 	var err error
-	success := el_utils.Retry(3, 0, func() (success bool) {
+	success := pkg.Retry(3, 0, func() (success bool) {
 		err = c.BatchHandler(ctx, batchInParams, dataMap)
 		if err != nil {
-			logs.CtxError(ctx, "BatchHandler fail", logs.String("batchInParams", el_utils.ToJsonString(batchInParams)), logs.String("err", err.Error()))
+			logs.CtxError(ctx, "BatchHandler fail", logs.String("batchInParams", pkg.ToJsonString(batchInParams)), logs.String("err", err.Error()))
 			return false
 		}
 		return true
